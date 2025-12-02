@@ -4,49 +4,65 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        'bg-primary': '#0d1117',
-        'bg-secondary': '#161b22',
-        'bg-tertiary': '#21262d',
-        'border-color': '#30363d',
-        'text-primary': '#f0f6fc',
-        'text-secondary': '#8b949e',
-        'accent-green': '#3fb950',
-        'accent-red': '#f85149',
-        'accent-blue': '#58a6ff',
-        'accent-yellow': '#d29922',
-        'accent-purple': '#a371f7',
+        // KuCoin-style dark theme
+        'kc-bg': '#0b0e11',
+        'kc-bg-light': '#1e2329',
+        'kc-bg-lighter': '#2b3139',
+        'kc-border': '#2b3139',
+        'kc-border-light': '#3c4451',
+        'kc-text': '#eaecef',
+        'kc-text-secondary': '#848e9c',
+        'kc-text-muted': '#5e6673',
+        'kc-green': '#00c787',
+        'kc-green-light': '#00e0a0',
+        'kc-red': '#ea383b',
+        'kc-red-light': '#ff4d4f',
+        'kc-yellow': '#f6be00',
+        'kc-cyan': '#00e0e0',
+        'kc-blue': '#1890ff',
+        'kc-purple': '#7c3aed',
       },
       fontFamily: {
-        'mono': ['JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', 'monospace'],
+        'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        'mono': ['JetBrains Mono', 'SF Mono', 'Monaco', 'Consolas', 'monospace'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'flash-green': 'flashGreen 0.5s ease-out',
-        'flash-red': 'flashRed 0.5s ease-out',
-        'slide-in': 'slideIn 0.3s ease-out',
+        'flash-up': 'flashUp 0.4s ease-out',
+        'flash-down': 'flashDown 0.4s ease-out',
+        'glow': 'glow 2s ease-in-out infinite',
+        'slide-up': 'slideUp 0.3s ease-out',
         'fade-in': 'fadeIn 0.2s ease-out',
       },
       keyframes: {
-        flashGreen: {
-          '0%': { backgroundColor: 'rgba(63, 185, 80, 0.3)' },
+        flashUp: {
+          '0%': { backgroundColor: 'rgba(0, 199, 135, 0.3)' },
           '100%': { backgroundColor: 'transparent' }
         },
-        flashRed: {
-          '0%': { backgroundColor: 'rgba(248, 81, 73, 0.3)' },
+        flashDown: {
+          '0%': { backgroundColor: 'rgba(234, 56, 59, 0.3)' },
           '100%': { backgroundColor: 'transparent' }
         },
-        slideIn: {
-          '0%': { transform: 'translateX(100%)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' }
+        glow: {
+          '0%, 100%': { opacity: '1', boxShadow: '0 0 5px currentColor' },
+          '50%': { opacity: '0.7', boxShadow: '0 0 20px currentColor' }
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' }
         },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' }
         }
+      },
+      boxShadow: {
+        'glow-green': '0 0 20px rgba(0, 199, 135, 0.4)',
+        'glow-red': '0 0 20px rgba(234, 56, 59, 0.4)',
+        'glow-cyan': '0 0 20px rgba(0, 224, 224, 0.4)',
       }
     },
   },

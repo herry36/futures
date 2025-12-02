@@ -27,6 +27,12 @@ interface UseWebSocketReturn extends WebSocketState {
   reconnect: () => void;
 }
 
+// Get the backend URL - always use port 5000 for the Flask backend
+const getBackendUrl = (): string => {
+  const hostname = window.location.hostname;
+  return `http://${hostname}:5000`;
+};
+
 export function useWebSocket(): UseWebSocketReturn {
   const socketRef = useRef<Socket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
@@ -42,36 +48,41 @@ export function useWebSocket(): UseWebSocketReturn {
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
-    const socket = io(window.location.origin, {
+    const backendUrl = getBackendUrl();
+    console.log('🔌 Connecting to WebSocket at:', backendUrl);
+
+    const socket = io(backendUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 50,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
+      timeout: 20000,
+      forceNew: true,
     });
 
     socket.on('connect', () => {
-      console.log('WebSocket connected');
+      console.log('✅ WebSocket connected!');
       setConnectionStatus('connected');
       socket.emit('subscribe', { channels: ['price', 'orderbook', 'positions', 'signals', 'pnl'] });
     });
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('❌ WebSocket disconnected:', reason);
       setConnectionStatus('disconnected');
     });
 
     socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
+      console.error('⚠️ WebSocket connection error:', error.message);
       setConnectionStatus('disconnected');
     });
 
     socket.on('connected', (data) => {
-      console.log('Server confirmed connection:', data);
+      console.log('📡 Server confirmed connection:', data);
     });
 
     socket.on('subscribed', (data) => {
-      console.log('Subscribed to updates:', data);
+      console.log('📢 Subscribed to updates:', data);
     });
 
     // Price updates
@@ -102,12 +113,12 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Trade events
     socket.on('trade_opened', (data: TradeEvent) => {
-      console.log('Trade opened:', data);
+      console.log('🚀 Trade opened:', data);
       setLastTradeOpened(data);
     });
 
     socket.on('trade_closed', (data: TradeEvent) => {
-      console.log('Trade closed:', data);
+      console.log('📊 Trade closed:', data);
       setLastTradeClosed(data);
     });
 
@@ -119,12 +130,13 @@ export function useWebSocket(): UseWebSocketReturn {
   }, []);
 
   const reconnect = useCallback(() => {
+    console.log('🔄 Reconnecting...');
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
     }
     setConnectionStatus('connecting');
-    connect();
+    setTimeout(connect, 500);
   }, [connect]);
 
   useEffect(() => {
