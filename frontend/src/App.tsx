@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useTraderData } from './hooks/useTraderData';
+import { LiveChart } from './components/LiveChart';
 import { formatPrice, formatPnL, formatPercent, formatVolume, formatTime, formatCountdown } from './utils/formatters';
 import { getSecondsUntilFunding } from './utils/calculations';
 import {
@@ -272,31 +273,9 @@ function App() {
               </div>
             </div>
 
-            {/* Center Column - Chart placeholder */}
+            {/* Center Column - Live Chart */}
             <div className="lg:col-span-6">
-              <div className="card h-[500px] flex flex-col">
-                <div className="px-4 py-3 border-b border-kc-border flex items-center justify-between">
-                  <span className="text-sm font-medium">BTC-PERPETUAL Chart</span>
-                  <div className="flex items-center gap-1">
-                    {['1m', '5m', '15m', '1H', '4H'].map(tf => (
-                      <button key={tf} className="px-2 py-1 text-xs rounded bg-kc-bg-lighter hover:bg-kc-border-light text-kc-text-secondary hover:text-kc-text transition-colors">
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex-1 flex items-center justify-center bg-kc-bg relative overflow-hidden">
-                  {/* Placeholder chart visualization */}
-                  <div className="absolute inset-0 bg-grid opacity-30" />
-                  <div className="relative z-10 text-center">
-                    <BarChart3 size={48} className="text-kc-text-muted mx-auto mb-2" />
-                    <p className="text-kc-text-secondary text-sm">TradingView Chart</p>
-                    <p className="text-kc-text-muted text-xs">Real-time candlestick data</p>
-                  </div>
-                  {/* Animated price line */}
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-kc-green to-transparent animate-pulse" />
-                </div>
-              </div>
+              <LiveChart price={price} positions={positions} />
             </div>
 
             {/* Right Column - Signals & Stats */}
