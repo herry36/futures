@@ -151,7 +151,11 @@ def get_metrics():
             FROM futures_scalp_trades
             WHERE result IS NOT NULL
         """)
-        overall = dict(c.fetchone())
+        row = c.fetchone()
+        overall = dict(row) if row else {
+            'total_trades': 0, 'wins': 0, 'losses': 0, 'total_pnl': 0,
+            'avg_win': 0, 'avg_loss': 0, 'best_trade': 0, 'worst_trade': 0
+        }
 
         # Today stats
         today = datetime.now().strftime("%Y-%m-%d")
@@ -165,11 +169,12 @@ def get_metrics():
             FROM futures_scalp_trades
             WHERE DATE(exit_time) = ? AND result IS NOT NULL
         """, (today,))
-        today_stats = dict(c.fetchone())
+        today_row = c.fetchone()
+        today_stats = dict(today_row) if today_row else {
+            'trades': 0, 'wins': 0, 'pnl': 0, 'best': 0, 'worst': 0
+        }
 
         # ML status
-        c.execute("SELECT * FROM futures_ml_status WHERE id = 1")
-        ml_status = dict(c.fetchone()) if c.fetchone() else {}
         c.execute("SELECT * FROM futures_ml_status WHERE id = 1")
         ml_row = c.fetchone()
         ml_status = dict(ml_row) if ml_row else {}

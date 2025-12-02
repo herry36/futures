@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, ISeriesApi, ColorType, LineStyle } from 'lightweight-charts';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { createChart, IChartApi, ISeriesApi, ColorType, LineStyle, Time } from 'lightweight-charts';
 
 interface LiveChartProps {
   price: number;
@@ -19,9 +19,14 @@ export function LiveChart({ price, positions = [] }: LiveChartProps) {
   const [timeframe, setTimeframe] = useState<'1m' | '5m' | '15m'>('1m');
 
   // Store candle data
-  const candleDataRef = useRef<any[]>([]);
+  const lastCandleTimeRef = useRef<number>(0);
   const currentCandleRef = useRef<any>(null);
-  const lastUpdateTimeRef = useRef<number>(0);
+  const isInitializedRef = useRef<boolean>(false);
+
+  // Get interval in seconds based on timeframe
+  const getInterval = useCallback(() => {
+    return timeframe === '1m' ? 60 : timeframe === '5m' ? 300 : 900;
+  }, [timeframe]);
 
   // Initialize chart
   useEffect(() => {
@@ -89,19 +94,6 @@ export function LiveChart({ price, positions = [] }: LiveChartProps) {
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
 
-    // Generate initial historical data
-    const initialData = generateHistoricalData(100, price || 97000);
-    candleDataRef.current = initialData;
-    candleSeries.setData(initialData);
-
-    // Generate volume data
-    const volumeData = initialData.map((candle: any) => ({
-      time: candle.time,
-      value: Math.random() * 1000 + 500,
-      color: candle.close >= candle.open ? 'rgba(0, 199, 135, 0.5)' : 'rgba(234, 56, 59, 0.5)',
-    }));
-    volumeSeries.setData(volumeData);
-
     // Resize handler
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -118,70 +110,104 @@ export function LiveChart({ price, positions = [] }: LiveChartProps) {
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
+      isInitializedRef.current = false;
     };
   }, []);
 
+  // Initialize data when price becomes available
+  useEffect(() => {
+    if (!candleSeriesRef.current || !volumeSeriesRef.current || !price || price === 0) return;
+    if (isInitializedRef.current) return;
+
+    const interval = getInterval();
+    const now = Math.floor(Date.now() / 1000);
+    const currentCandleTime = Math.floor(now / interval) * interval;
+
+    // Generate historical data ending at the current candle time
+    const historicalData = generateHistoricalData(100, price, interval, currentCandleTime);
+
+    candleSeriesRef.current.setData(historicalData);
+
+    // Generate volume data
+    const volumeData = historicalData.map((candle: any) => ({
+      time: candle.time,
+      value: Math.random() * 1000 + 500,
+      color: candle.close >= candle.open ? 'rgba(0, 199, 135, 0.5)' : 'rgba(234, 56, 59, 0.5)',
+    }));
+    volumeSeriesRef.current.setData(volumeData);
+
+    // Set the last candle as current
+    const lastCandle = historicalData[historicalData.length - 1];
+    lastCandleTimeRef.current = lastCandle.time as number;
+    currentCandleRef.current = { ...lastCandle };
+
+    isInitializedRef.current = true;
+
+    // Fit content
+    chartRef.current?.timeScale().fitContent();
+  }, [price, getInterval]);
+
   // Update chart with new price
   useEffect(() => {
-    if (!candleSeriesRef.current || !price || price === 0) return;
+    if (!candleSeriesRef.current || !isInitializedRef.current || !price || price === 0) return;
 
+    const interval = getInterval();
     const now = Math.floor(Date.now() / 1000);
-    const interval = timeframe === '1m' ? 60 : timeframe === '5m' ? 300 : 900;
     const candleTime = Math.floor(now / interval) * interval;
 
-    // Throttle updates to avoid too many renders
-    if (now - lastUpdateTimeRef.current < 1) return;
-    lastUpdateTimeRef.current = now;
+    // Only update if candleTime is >= lastCandleTime
+    if (candleTime < lastCandleTimeRef.current) {
+      return; // Skip updates for old timestamps
+    }
 
-    if (currentCandleRef.current && currentCandleRef.current.time === candleTime) {
-      // Update current candle
-      const updated = {
-        ...currentCandleRef.current,
-        high: Math.max(currentCandleRef.current.high, price),
-        low: Math.min(currentCandleRef.current.low, price),
-        close: price,
-      };
-      currentCandleRef.current = updated;
-      candleSeriesRef.current.update(updated);
-    } else {
-      // New candle
-      const newCandle = {
-        time: candleTime,
-        open: price,
-        high: price,
-        low: price,
-        close: price,
-      };
-      currentCandleRef.current = newCandle;
-      candleSeriesRef.current.update(newCandle);
+    try {
+      if (candleTime === lastCandleTimeRef.current && currentCandleRef.current) {
+        // Update current candle
+        const updated = {
+          time: candleTime as Time,
+          open: currentCandleRef.current.open,
+          high: Math.max(currentCandleRef.current.high, price),
+          low: Math.min(currentCandleRef.current.low, price),
+          close: price,
+        };
+        currentCandleRef.current = updated;
+        candleSeriesRef.current.update(updated);
+      } else if (candleTime > lastCandleTimeRef.current) {
+        // New candle
+        const newCandle = {
+          time: candleTime as Time,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+        };
+        currentCandleRef.current = newCandle;
+        lastCandleTimeRef.current = candleTime;
+        candleSeriesRef.current.update(newCandle);
 
-      // Update volume
-      if (volumeSeriesRef.current) {
-        volumeSeriesRef.current.update({
-          time: candleTime,
-          value: Math.random() * 1000 + 500,
-          color: 'rgba(0, 224, 224, 0.5)',
-        });
+        // Update volume
+        if (volumeSeriesRef.current) {
+          volumeSeriesRef.current.update({
+            time: candleTime as Time,
+            value: Math.random() * 1000 + 500,
+            color: 'rgba(0, 224, 224, 0.5)',
+          });
+        }
       }
+    } catch (error) {
+      // Silently ignore update errors (can happen during rapid updates)
+      console.debug('Chart update skipped:', error);
     }
-
-    // Add position lines
-    if (positions.length > 0 && chartRef.current) {
-      positions.forEach(pos => {
-        // These will be recreated on each render, which is fine for now
-      });
-    }
-  }, [price, timeframe, positions]);
+  }, [price, getInterval]);
 
   // Handle timeframe change
   const handleTimeframeChange = (tf: '1m' | '5m' | '15m') => {
+    if (tf === timeframe) return;
+
     setTimeframe(tf);
-    if (candleSeriesRef.current && price) {
-      const newData = generateHistoricalData(100, price);
-      candleDataRef.current = newData;
-      candleSeriesRef.current.setData(newData);
-      currentCandleRef.current = null;
-    }
+    isInitializedRef.current = false;
+    currentCandleRef.current = null;
+    lastCandleTimeRef.current = 0;
   };
 
   return (
@@ -210,13 +236,12 @@ export function LiveChart({ price, positions = [] }: LiveChartProps) {
 }
 
 // Generate historical candle data
-function generateHistoricalData(count: number, currentPrice: number) {
+function generateHistoricalData(count: number, currentPrice: number, interval: number, endTime: number) {
   const data: any[] = [];
-  const now = Math.floor(Date.now() / 1000);
   let price = currentPrice - (Math.random() * 500 - 250); // Start slightly different
 
   for (let i = count; i >= 0; i--) {
-    const time = now - i * 60; // 1 minute candles
+    const time = endTime - i * interval;
     const volatility = Math.random() * 50 + 10;
     const change = (Math.random() - 0.5) * volatility;
 
@@ -226,7 +251,7 @@ function generateHistoricalData(count: number, currentPrice: number) {
     const low = Math.min(open, close) - Math.random() * 20;
 
     data.push({
-      time,
+      time: time as Time,
       open: Math.round(open * 100) / 100,
       high: Math.round(high * 100) / 100,
       low: Math.round(low * 100) / 100,
@@ -238,9 +263,10 @@ function generateHistoricalData(count: number, currentPrice: number) {
 
   // Adjust last candle to current price
   if (data.length > 0) {
-    data[data.length - 1].close = currentPrice;
-    data[data.length - 1].high = Math.max(data[data.length - 1].high, currentPrice);
-    data[data.length - 1].low = Math.min(data[data.length - 1].low, currentPrice);
+    const lastCandle = data[data.length - 1];
+    lastCandle.close = currentPrice;
+    lastCandle.high = Math.max(lastCandle.high, currentPrice);
+    lastCandle.low = Math.min(lastCandle.low, currentPrice);
   }
 
   return data;
