@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { TraderStatus, Metrics, Trade, OrderBookData } from '../types';
 
-const API_BASE = '/api';
+// Get the API base URL - backend runs on port 6998
+const getApiBase = (): string => {
+  const hostname = window.location.hostname;
+  return `http://${hostname}:6998/api`;
+};
+
+const API_BASE = getApiBase();
 
 interface UseTraderDataReturn {
   status: TraderStatus | null;

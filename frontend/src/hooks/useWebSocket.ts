@@ -27,10 +27,10 @@ interface UseWebSocketReturn extends WebSocketState {
   reconnect: () => void;
 }
 
-// Get the backend URL - always use port 5000 for the Flask backend
+// Get the backend URL - always use port 6998 for the Flask backend
 const getBackendUrl = (): string => {
   const hostname = window.location.hostname;
-  return `http://${hostname}:5000`;
+  return `http://${hostname}:6998`;
 };
 
 export function useWebSocket(): UseWebSocketReturn {

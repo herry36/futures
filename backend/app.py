@@ -500,5 +500,5 @@ if __name__ == '__main__':
     start_streaming()
 
     # Run Flask app
-    logger.info("Starting BTC Futures Dashboard API on http://localhost:5000")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    logger.info("Starting BTC Futures Dashboard API on http://0.0.0.0:6998")
+    socketio.run(app, host='0.0.0.0', port=6998, debug=False)
