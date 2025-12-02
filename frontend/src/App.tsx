@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useTraderData } from './hooks/useTraderData';
 import { LiveChart } from './components/LiveChart';
+import { EquityCurve } from './components/EquityCurve';
+import { ExpectedValue } from './components/ExpectedValue';
 import { formatPrice, formatPnL, formatPercent, formatVolume, formatTime, formatCountdown } from './utils/formatters';
 import { getSecondsUntilFunding } from './utils/calculations';
 import {
   Wifi, WifiOff, TrendingUp, TrendingDown, Activity, Clock,
   BarChart3, Target, Brain, RefreshCw, ChevronDown, ChevronUp,
-  AlertCircle, CheckCircle, XCircle, X, Zap, Layers
+  AlertCircle, CheckCircle, XCircle, X, Zap, Layers, Rocket
 } from 'lucide-react';
 
 function App() {
@@ -86,17 +88,42 @@ function App() {
       {/* Top Header Bar */}
       <header className="bg-kc-bg-light border-b border-kc-border px-4 py-2">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          {/* Logo & Title */}
+          {/* Logo & Title - DIGITAL Orion Futures */}
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-kc-green to-kc-cyan flex items-center justify-center">
-                <Zap className="w-6 h-6 text-kc-bg" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-kc-green animate-pulse" />
+              <motion.div
+                className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-600 via-red-500 to-kc-cyan flex items-center justify-center"
+                animate={{
+                  boxShadow: [
+                    '0 0 15px rgba(234, 56, 59, 0.4)',
+                    '0 0 25px rgba(234, 56, 59, 0.6)',
+                    '0 0 15px rgba(234, 56, 59, 0.4)',
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Rocket className="w-7 h-7 text-white" />
+              </motion.div>
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-kc-text tracking-tight">BTC SCALPER</h1>
-              <p className="text-[10px] text-kc-text-secondary -mt-0.5">AI TRADING SYSTEM</p>
+              <div className="flex items-baseline gap-1">
+                <motion.span
+                  className="text-xl font-black tracking-wider text-red-500"
+                  animate={{
+                    textShadow: [
+                      '0 0 10px rgba(234, 56, 59, 0.6), 0 0 20px rgba(234, 56, 59, 0.4)',
+                      '0 0 15px rgba(234, 56, 59, 0.8), 0 0 30px rgba(234, 56, 59, 0.6)',
+                      '0 0 10px rgba(234, 56, 59, 0.6), 0 0 20px rgba(234, 56, 59, 0.4)',
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  style={{ textShadow: '0 0 10px rgba(234, 56, 59, 0.6)' }}
+                >
+                  DIGITAL
+                </motion.span>
+              </div>
+              <h1 className="text-lg font-bold text-kc-text tracking-tight -mt-1">Orion Futures</h1>
             </div>
           </div>
 
@@ -479,6 +506,18 @@ function App() {
               </table>
             </div>
           </div>
+
+          {/* Equity Curve - Starting Capital $20,000 */}
+          <EquityCurve trades={trades} sessionPnl={pnlData?.session_pnl || 0} />
+
+          {/* Expected Value Formula - Neon Style */}
+          <ExpectedValue
+            totalTrades={metrics?.overall?.total_trades || 0}
+            wins={Math.round((metrics?.overall?.win_rate || 0) / 100 * (metrics?.overall?.total_trades || 0))}
+            losses={Math.round((1 - (metrics?.overall?.win_rate || 0) / 100) * (metrics?.overall?.total_trades || 0))}
+            avgWin={metrics?.overall?.avg_win || 0}
+            avgLoss={metrics?.overall?.avg_loss || 0}
+          />
         </div>
       </main>
 
@@ -486,7 +525,8 @@ function App() {
       <footer className="bg-kc-bg-light border-t border-kc-border px-4 py-2 mt-auto">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto text-xs text-kc-text-secondary">
           <div className="flex items-center gap-2">
-            <span>BTC Futures Scalper v2.0</span>
+            <span className="text-red-500 font-bold" style={{ textShadow: '0 0 5px rgba(234, 56, 59, 0.4)' }}>DIGITAL</span>
+            <span className="text-kc-text">Orion Futures v2.0</span>
             <span className="text-kc-text-muted">|</span>
             <span>XGBoost + PyTorch Ensemble</span>
           </div>
